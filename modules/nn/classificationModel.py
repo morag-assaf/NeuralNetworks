@@ -11,65 +11,6 @@ import matplotlib.pyplot as plt
 import pickle
 from sklearn.metrics import roc_auc_score,roc_curve
 
-
-def nested_dict_to_df(dict_x):
-    output = pd.DataFrame()
-    for k, v in dict_x.items():
-        if type(v) == dict:
-            df_i = pd.DataFrame.from_dict(v, orient='index').T
-            df_i.columns = k + '_' + df_i.columns
-            output = pd.concat([output, df_i], axis=1)
-        else:
-            output[k] = v
-    return output
-
-def time_string():
-    t=datetime.datetime.now()
-    return t.strftime("%Y%m%d_%H%M%S")
-
-def evalute_hyper_random_search():
-    number_of_users=2000
-    number_of_items=3000
-    ## ---- get data ---- ##
-    rd = recommender_data(conf['train_file'], conf['validation_file'], conf['test_file'])
-    tr_user, tr_items, tr_rating, val_rating = \
-        rd.training_validation_split(number_of_users=number_of_users, number_of_items=number_of_items, split_quant=0.2,
-                                     selection_type='random')
-
-    output = pd.DataFrame()
-
-    ## ---- loop over candidates---- ##
-    for i in range(20):
-        candidate=get_candidate(conf)
-        model = recommender(R=tr_rating, train_ind=(tr_user, tr_items), V=val_rating, val_ind=(tr_user, tr_items),
-                            latent_dim=candidate['latent_dim'],
-                            epochs=60,
-                            lrs=candidate['lrs'],
-                            regularizers=candidate['regularizers'],
-                            optimizer='sgd')
-        start_run = time.time()
-        m=model.fit()
-        end_run = time.time()
-
-        ## ---- collecting results--- ##
-        candidate['model'] = i
-        candidate['naive_error']=model.naive_error()
-        candidate['min_MSE'] = min(model.loss_curve['validation'])
-        candidate['best_epoch'] = np.argmin(model.loss_curve['validation'])
-        candidate['% improvement']=1- candidate['min_MSE']/candidate['naive_error']
-        candidate['elpased']=str(datetime.timedelta(seconds=end_run-start_run))
-        fig=model.plot_learning_curve()
-        plt.savefig(f'export/model_{i}_{time_string()}.png')
-
-        ## ---- saving run results --- ##
-        output=output.append(nested_dict_to_df(candidate))
-
-    #printing to file
-    output.to_csv(f'export/u_{number_of_users}_i_{number_of_items}_{time_string()}.csv')
-
-def auroc(y_true, y_pred):
-    return tf.py_func(roc_auc_score, (y_true, y_pred), tf.double)
-
 class classificationModel:
     def __init__(self,dataz,CONF):
         self.X_train = dataz[0]
@@ -180,20 +121,6 @@ class classificationModel:
         print("test loss, test acc:", results)
         return results
 
-    # def decider(self,NewCONF,optLoss,optAcc,historyz,evaluateResultsLoss,evaluateResultsAcc,LossERR,AccERR,numzi,inputzi,nueronzi,batchi):
-    #     if NewCONF['optimal_nn']['optLoss'] > optLoss:
-    #         NewCONF["optimal_nn"]["hidden_layers"] = numzi
-    #         NewCONF["optimal_nn"]["inputNeurons"] = inputzi
-    #         NewCONF["optimal_nn"]["hiddenLayerNeurons"] = nueronzi
-    #         NewCONF["optimal_nn"]["batches"] = batchi
-    #         NewCONF["optimal_nn"]["optLoss"] = optLoss
-    #         NewCONF["optimal_nn"]["optAcc"] = optAcc
-    #         NewCONF["optimal_nn"]["historyz"] = historyz
-    #         NewCONF["optimal_nn"]["evaluateResultsLoss"] = evaluateResultsLoss
-    #         NewCONF["optimal_nn"]["evaluateResultsAcc"] = evaluateResultsAcc
-    #         NewCONF["optimal_nn"]["lossERR"] = LossERR
-    #         NewCONF["optimal_nn"]["AccERR"] = AccERR
-    #     return NewCONF
 
     ############# Still need to work on predictor
     # def predict(self):
@@ -303,51 +230,6 @@ class classificationModel:
 
         return candidate
 
-        # numberHideenLayers = self.CONF['hyperparameters']['numberHiddenLayers']
-        # inputNeuron = self.CONF['hyperparameters']['inputNeuron']
-        # hiddenLayerNeurons = self.CONF['hyperparameters']['hiddenLayerNeurons']
-        # initial_lr = self.CONF['hyperparameters']['lr']
-        # lenz = len(numberHideenLayers) * len(inputNeuron) * len(hiddenLayerNeurons) * len(initial_lr)
-        # print('\n','\n',"There are ",lenz," conditions, estimates run time is ",'{:.2f}'.format(lenz * 0.5)," minutes")
-
-        # NeuronsInput = 1600
-        # NumLayers = 2
-        # NeuronsHidden = 800
-        # batchez = 128
-        # initial_lr = initial_lr[1]
-
-        # NN_model = self.NN_model(NeuronsInput, NumLayers, NeuronsHidden)
-        # NN_results = self.fit(NN_model,batchez,initial_lr)
-        # evaluateResults = self.evaluate(NN_model)
-
-        # self.evaluation = evaluateResults
-        # self.loss = NN_results.history['loss']
-        # self.accuracy = NN_results.history['accuracy']
-        # self.valLoss = NN_results.history['val_loss']
-        # self.valacc = NN_results.history['val_accuracy']
-        # self.lr = NN_results.history['lr']
-        # self.plotGraphs()  # Plotting the result
-
-
-        ### Addign the sensitivity dimension
-        # for NumLayers in numberHideenLayers:
-        #     for NeuronsInput in inputNeuron:
-        #         for NeuronsHidden in hiddenLayerNeurons:
-        #             i += 1
-        #             NN_model = self.NN_model(NeuronsInput, NumLayers, NeuronsHidden)
-        #             NN_results = self.fit(NN_model)
-        #             evaluateResults = self.evaluate(NN_model)
-        #             optLoss = NN_results.history['loss'][-1]
-        #             optAcc = NN_results.history['accuracy'][-1]
-        #             historyz = NN_results.history
-        #             evaluateResultsLoss = evaluateResults[0]
-        #             evaluateResultsAcc = evaluateResults[1]
-        #             LossERR = abs((optLoss - evaluateResultsLoss))
-        #             AccERR = abs((evaluateResultsAcc - optAcc))
-        #             NewCONF = self.decider(NewCONF,optLoss, optAcc, historyz, evaluateResultsLoss, evaluateResultsAcc,
-        #                          LossERR, AccERR,NumLayers,NeuronsInput,NeuronsHidden)
-        #             print("This is iteration number: ",i," out of ",lenz,'\n',"CURRENT RUN TIME:", '{:.2f}'.format((time.time() - start_time) / 60), "minutes.")
-        # return NN_results
 
 
 if __name__=='__main__':
