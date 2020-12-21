@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 import pickle
 from sklearn.metrics import roc_auc_score,roc_curve
 
+def time_string():
+    t=datetime.datetime.now()
+    return t.strftime("%Y%m%d_%H%M%S")
+
 class classificationModel:
     def __init__(self,dataz,CONF):
         self.X_train = dataz[0]
