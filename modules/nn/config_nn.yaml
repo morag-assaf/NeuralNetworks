@@ -1,0 +1,39 @@
+# This is the configuration file
+#"""
+#  https://stackoverflow.com/questions/25389095/python-get-path-of-root-project-structure
+#  """
+
+# Global configuration for the run
+use_pickle: no
+use_synth_data: no
+rawDataAnalysis: no #If you want to analyze the raw data in order to assess features
+plot_graphs: yes
+
+# Files locations
+jsonPath: '/Users/assafmorag/Projects/Sakranut_Project/modules/config.json'
+syncData: '/Users/assafmorag/Projects/Sakranut_Project/modules/syn_data_200k.csv'
+rawData: 'data/framingham_balanced.csv'
+picklePath: 'export/pickledModel'
+
+# NN configuration
+randGredNum: 50
+batchez: 128
+max_epochs: 50001
+candidate:
+  numberHiddenLayers:
+    - 1
+    - 2
+    - 3
+    - 4
+  inputNeuron:
+    - 1600
+    - 1400
+    - 1200
+  hiddenLayerNeurons:
+    - 1000
+    - 800
+    - 600
+  lr:
+    - 0.1
+    - 0.01
+    - 0.001
